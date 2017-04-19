@@ -39,18 +39,26 @@ module "db" {
   count            = "${var.db_server_params["count"]}"
 }
 
-resource null_resource "ansible_web" {
-  depends_on = ["module.web"]
-
-  provisioner "local-exec" {
-    command = "cd ../ansible && ansible-playbook playbooks/web.yml -e env=${var.env} -e group_name=${var.web_server_params["name"]}"
-  }
-}
-
 resource null_resource "ansible_db" {
   depends_on = ["module.db"]
 
+  triggers {
+    web_instance_ips = "${join(",", module.db.id_list)}"
+  }
+
   provisioner "local-exec" {
     command = "cd ../ansible && ansible-playbook playbooks/db.yml -e env=${var.env} -e group_name=${var.db_server_params["name"]}"
+  }
+}
+
+resource null_resource "ansible_web" {
+  depends_on = ["module.web", "null_resource.ansible_db"]
+
+  triggers {
+    web_instance_ips = "${join(",", module.web.id_list)}"
+  }
+
+  provisioner "local-exec" {
+    command = "cd ../ansible && ansible-playbook playbooks/web.yml -e env=${var.env} -e group_name=${var.web_server_params["name"]}"
   }
 }
