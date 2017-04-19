@@ -16,7 +16,7 @@ variable region {
 }
 
 variable env {
-  default = "dev"
+  description = "current working environment"
 }
 
 variable ami {
